@@ -1,5 +1,7 @@
 # usage
 
+## improve this process
+
 before running the scripts, add all computers you want to rename to the `Jamf computer rename` policy in Jamf Pro
 
 1. run `query_jamf.sh` to generate `ALL_COMPUTERS.csv`
@@ -13,3 +15,7 @@ before running the scripts, add all computers you want to rename to the `Jamf co
 upon completion, all specified computers should now be correctly named `r-<username>` in jamf
 
 correct name will get pushed to the device locally the next time policy is applied / upon check-in
+
+## quick_rename.sh
+
+`./quick_rename.sh <id> <username>`

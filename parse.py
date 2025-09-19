@@ -1,70 +1,50 @@
-import json, csv
+from jamf_credential import JAMF_URL, get_token, invalidate_token
+import requests
+import urllib3
+import json
+import csv
 
-
-with open('data/response_jamf_computers.json', 'r') as f:
+with open("data/response_computers_basic.json") as f:
   data = json.load(f)
-COMPUTERS = data.get('results', [])
+COMPUTERS = data.get("computers", [])
 
-with open('data/response_jamf_computer_users.json', 'r') as f:
-  data = json.load(f)
-data_users = {}
-for computer in data.get('results', []):
-  data_users[computer['id']] = computer
-COMPUTER_USERS = data_users
+# with open("data/response_computers_user.json") as f:
+#   data = json.load(f)
+# COMPUTERS_USERS = {comp["id"]: comp for comp in data.get("computers", [])}
 
-with open('data/response_jamf_departments.json', 'r') as f:
-  data = json.load(f)
-DEPARTMENTS = data.get('results', [])
+# add email to COMPUTERS and convert to csv
 
+# ==================================================================================
 
-def get_user_data(computer_id):
-  if computer_id in COMPUTER_USERS:
-    return COMPUTER_USERS[computer_id]['userAndLocation']
-  return None
+def add_email(computer_id):
+  # create access token
+  access_token, expires_in = get_token()
+  print(f"Token valid for {expires_in} seconds")
 
+  user_url = f"{JAMF_URL}/api/v1/computers-inventory/{computer_id}?section=USER_AND_LOCATION"
+  headers = {
+    "accept": "application/json",
+    "authorization": f"Bearer {access_token}"
+  }
+  response = requests.get(user_url, headers=headers, verify=False)
 
-def parse_department(department_id):
-  for department in DEPARTMENTS:
-    if department['id'] == department_id:
-      return department['name']
-  return None
+  with open("data/templookatthis.json", "w") as f:
+    json.dump(response.json(), f)
 
+  # kill access token
+  invalidate_token(access_token)
+
+# ==================================================================================
 
 def main():
-  output = []
   for computer in COMPUTERS:
-    current = {}
-    current['id'] = computer['id']
-    current['sn'] = computer.get('hardware', {}).get('serialNumber', 'Unknown')
-    current['username'] = None
-    current['full_name'] = None
-    current['email'] = None
-    current['egy'] = None
-    current['department'] = None
-    current['building'] = None
+    if computer["name"] != f"r-{computer["username"]}":
+      print(f"Adding email for {computer}")
+      add_email(computer["id"])
+      break
 
-    user_data = get_user_data(computer.get('id'))
-    if user_data:
-      current['username'] = user_data['username']
-      current['full_name'] = user_data['realname']
-      current['email'] = user_data['email']
-      current['egy'] = user_data['position']
-      current['department'] = parse_department(user_data['departmentId'])
-      current['building'] = user_data['buildingId']
+  print("Done parse.py")
 
-    output.append(current)
-
-  # Write to CSV
-  with open('ALL_COMPUTERS.csv', 'w', newline='') as f:
-    writer = csv.DictWriter(f, fieldnames=output[0].keys())
-    writer.writeheader()
-    writer.writerows(output)
-  print('Generated ALL_COMPUTERS.csv')
-
-
-if __name__ == '__main__':
-  print('\nStart')
-
+if __name__ == "__main__":
+  urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
   main()
-
-  print('Done')

@@ -77,4 +77,4 @@ curl -H "Authorization: Bearer $access_token" $url/api/v1/jamf-pro-version -X GE
 printf "\nDone query_jamf.sh"
 
 # generate output.csv
-python3 parse.py 
+python3 parse.py

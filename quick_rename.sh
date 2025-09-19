@@ -62,7 +62,7 @@ renameComputer() {
     -d "$payload"
   )
   echo "$response" > "./data/raw.json"
-  tr -d "\11\12\15\40-\176" < ./data/raw.json > ./data/cleaned.json  
+  tr -d "\11\12\15\40-\176" < ./data/raw.json > ./data/cleaned.json
   http_status=$(cat ./data/cleaned.json | jq -r '.httpStatus // empty')
   if [[ "$http_status" -ge 400 && "$http_status" -le 499 ]]; then
     printf "\nFailed to rename computer r-%s" "$username" >> "$LOG_FILE" 2>&1
@@ -73,7 +73,7 @@ renameComputer() {
 }
 
 LOG_DIR="./logs"
-LOG_FILE="$LOG_DIR/$(date '+%Y-%m-%d_%H-%M-%S').log"
+LOG_FILE="$LOG_DIR/QR-$(date '+%Y-%m-%d_%H-%M-%S').log"
 mkdir -p "$LOG_DIR"
 ls -1t "$LOG_DIR" | tail -n +5 | xargs -I {} rm -f "$LOG_DIR/{}"
 
