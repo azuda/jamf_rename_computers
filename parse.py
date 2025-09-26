@@ -3,47 +3,109 @@ import requests
 import urllib3
 import json
 import csv
+import time
 
 with open("data/response_computers_basic.json") as f:
   data = json.load(f)
 COMPUTERS = data.get("computers", [])
 
-# with open("data/response_computers_user.json") as f:
-#   data = json.load(f)
-# COMPUTERS_USERS = {comp["id"]: comp for comp in data.get("computers", [])}
-
-# add email to COMPUTERS and convert to csv
-
 # ==================================================================================
 
-def add_email(computer_id):
-  # create access token
-  access_token, expires_in = get_token()
-  print(f"Token valid for {expires_in} seconds")
+def add_user_data(computer_id, access_token, token_expiration_epoch):
+  # renew token if expiration < 15 secs
+  current_epoch = int(time.time())
+  if current_epoch > token_expiration_epoch - 15:
+    access_token, expires_in = get_token()
+    token_expiration_epoch = current_epoch + expires_in
+    print(f"Token valid for {expires_in} seconds")
 
+  # GET userAndLocation by computer id
   user_url = f"{JAMF_URL}/api/v1/computers-inventory/{computer_id}?section=USER_AND_LOCATION"
   headers = {
     "accept": "application/json",
     "authorization": f"Bearer {access_token}"
   }
   response = requests.get(user_url, headers=headers, verify=False)
+  # print(response.json())
 
-  with open("data/templookatthis.json", "w") as f:
-    json.dump(response.json(), f)
+  # add email, dept, building to computer
+  email = response.json().get("userAndLocation", {"email": "N/A"}).get("email", "N/A")
 
-  # kill access token
-  invalidate_token(access_token)
+  # convert dept id to dept name
+  department_id = response.json().get("userAndLocation", {"departmentId": "N/A"}).get("departmentId", "N/A")
+  try:
+    response_dept = requests.get(f"{JAMF_URL}/JSSResource/departments/id/{department_id}", headers=headers, verify=False)
+    department = response_dept.json().get("department", {"name": "N/A"}).get("name", "N/A")
+  except:
+    department = "N/A"
+
+  # convert building id to building name
+  building_id = response.json().get("userAndLocation", {"buildingId": "N/A"}).get("buildingId", "N/A")
+  try:
+    response_build = requests.get(f"{JAMF_URL}/JSSResource/buildings/id/{building_id}", headers=headers, verify=False)
+    building = response_build.json().get("building", {"name": "N/A"}).get("name", "N/A")
+  except:
+    building = "N/A"
+
+  # add cleaned user data to computer
+  for computer in COMPUTERS:
+    if computer["id"] == computer_id:
+      computer["email"] = email
+      computer["department"] = department
+      computer["building"] = building
+      print("Added userAndLocation for {:<25} {}".format(computer['name'], computer['serial_number']))
+      break
+
+  return access_token, token_expiration_epoch
 
 # ==================================================================================
 
 def main():
+  # initialize jamf api token
+  access_token, expires_in = get_token()
+  token_expiration_epoch = int(time.time()) + expires_in
+
+  # add userAndLocation to computers where name is not r-username
   for computer in COMPUTERS:
-    if computer["name"] != f"r-{computer["username"]}":
-      print(f"Adding email for {computer}")
-      add_email(computer["id"])
-      break
+    if computer["name"] != f"r-{computer['username']}":
+      access_token, token_expiration_epoch = add_user_data(
+        computer["id"], access_token, token_expiration_epoch)
+  invalidate_token(access_token)
+
+  # filter useful keys
+  for computer in COMPUTERS:
+    keys_to_keep = ["id", "name", "serial_number", "username", "email", "department", "building", "STATUS", "UNAME"]
+    for key in list(computer.keys()):
+      if key not in keys_to_keep:
+        del computer[key]
+  print("Filtered useful columns")
+
+  # populate STATUS + UNAME columns
+  for computer in COMPUTERS:
+    # if device has user assigned
+    if isinstance(computer.get("username"), str) and isinstance(computer.get("email"), str) and computer["email"]:
+      # disambiguate username
+      uname = computer["email"].split("@")[0]
+      computer["UNAME"] = uname
+      if computer["name"] == f"r-{uname}": # ex. r-jsmith
+        computer["STATUS"] = "GOOD"
+      elif uname in computer["name"]: # ex. r-jsmith-m4
+        computer["STATUS"] = "CHECK"
+      else:
+        computer["STATUS"] = "BAD"
+    else:
+      computer["STATUS"] = "Unassigned"
+      computer["UNAME"] = "N/A"
+
+  # write to csv
+  with open("data/ALL_COMPUTERS.csv", "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=COMPUTERS[0].keys())
+    writer.writeheader()
+    writer.writerows(COMPUTERS)
 
   print("Done parse.py")
+
+# ==================================================================================
 
 if __name__ == "__main__":
   urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

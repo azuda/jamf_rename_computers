@@ -2,6 +2,7 @@ __pycache__/
 .venv/
 data/
 logs/
+.DS_STORE
 .env
 *.csv
 *.xlsx
