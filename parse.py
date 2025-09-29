@@ -58,7 +58,7 @@ def add_user_data(computer_id, access_token, token_expiration_epoch):
       computer["email"] = email
       computer["department"] = department
       computer["building"] = building
-      print("Added userAndLocation for {:<8} {:<26} {}".format(computer['id'], computer['name'], computer['serial_number']))
+      print("Added userAndLocation for {:<26} {}".format(computer['name'], computer['serial_number']))
       break
 
   return access_token, token_expiration_epoch
