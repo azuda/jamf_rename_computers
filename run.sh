@@ -12,6 +12,6 @@ echo "Script start @ $(date)" >> "$LOG_FILE"
 
 $VENV query_jamf.py >> "$LOG_FILE" 2>&1
 $VENV parse.py >> "$LOG_FILE" 2>&1
-# $VENV rename.py >> "$LOG_FILE" 2>&1
+$VENV rename.py >> "$LOG_FILE" 2>&1
 
 echo "Script end @ $(date)" >> "$LOG_FILE"
