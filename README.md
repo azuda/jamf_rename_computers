@@ -2,20 +2,24 @@
 
 ## improve this process
 
-before running the scripts, add all computers you want to rename to the `Jamf computer rename` policy in Jamf Pro
+before running, add all computers you want to rename to the `Jamf computer rename` policy in jamf
 
-1. run `query_jamf.sh` to generate `ALL_COMPUTERS.csv`
+1. run `query_jamf.py` to get list of computers
 
-2. use excel tables to filter computers you want from `ALL_COMPUTERS.csv`
+2. run `parse.py` to generate `all_computers.csv`
 
-3. copy **id** and **username** columns to a new file named `rename.csv` (do not include table headers)
+3. use excel to filter computers to rename
 
-4. run `rename_computers.sh`
+4. save filtered table to `rename.csv`
+
+5. run `rename.py`
 
 upon completion, all specified computers should now be correctly named `r-<username>` in jamf
 
-correct name will get pushed to the device locally the next time policy is applied / upon check-in
+> **Note:** this takes ~20 minutes to complete - do not drop network connection while running
 
-## quick_rename.sh
+correct name will get pushed to the device locally upon the next recurring check-in
 
-`./quick_rename.sh <id> <username>`
+## Quick Rename
+
+`./quick_rename.sh <computer_id> <username>`
