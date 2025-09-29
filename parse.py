@@ -9,6 +9,11 @@ with open("data/response_computers_basic.json") as f:
   data = json.load(f)
 COMPUTERS = data.get("computers", [])
 
+with open("data/exceptions.csv") as f:
+  reader = csv.reader(f)
+  EXCEPTIONS = [int(row[0]) for row in reader if row] # skip empty rows
+print(f"Loaded {len(EXCEPTIONS)} exceptions from ./data/exceptions.csv")
+
 # ==================================================================================
 
 def add_user_data(computer_id, access_token, token_expiration_epoch):
@@ -53,7 +58,7 @@ def add_user_data(computer_id, access_token, token_expiration_epoch):
       computer["email"] = email
       computer["department"] = department
       computer["building"] = building
-      print("Added userAndLocation for {:<25} {}".format(computer['name'], computer['serial_number']))
+      print("Added userAndLocation for {:<26} {}".format(computer['name'], computer['serial_number']))
       break
 
   return access_token, token_expiration_epoch
@@ -67,9 +72,11 @@ def main():
 
   # add userAndLocation to computers where name is not r-username
   for computer in COMPUTERS:
-    if computer["name"] != f"r-{computer['username']}":
-      access_token, token_expiration_epoch = add_user_data(
-        computer["id"], access_token, token_expiration_epoch)
+    # if computer["name"] != f"r-{computer['username']}":
+    #   access_token, token_expiration_epoch = add_user_data(
+    #     computer["id"], access_token, token_expiration_epoch)
+    access_token, token_expiration_epoch = add_user_data(
+      computer["id"], access_token, token_expiration_epoch)
   invalidate_token(access_token)
 
   # filter useful keys
@@ -87,7 +94,7 @@ def main():
       # disambiguate username
       uname = computer["email"].split("@")[0]
       computer["UNAME"] = uname
-      if computer["name"] == f"r-{uname}": # ex. r-jsmith
+      if computer["name"] == f"r-{uname}" or computer["id"] in EXCEPTIONS: # ex. r-jsmith
         computer["STATUS"] = "GOOD"
       elif uname in computer["name"]: # ex. r-jsmith-m4
         computer["STATUS"] = "CHECK"
@@ -98,12 +105,12 @@ def main():
       computer["UNAME"] = "N/A"
 
   # write to csv
-  with open("data/ALL_COMPUTERS.csv", "w", newline="") as f:
+  with open("data/all_computers.csv", "w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=COMPUTERS[0].keys())
     writer.writeheader()
     writer.writerows(COMPUTERS)
 
-  print("Done parse.py")
+  print("Done parse.py\n")
 
 # ==================================================================================
 

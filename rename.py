@@ -4,7 +4,7 @@ import urllib3
 import csv
 import time
 
-with open("data/rename.csv", "r") as f:
+with open("data/all_computers.csv", "r") as f:
   reader = csv.DictReader(f)
   COMPUTERS = [row for row in reader]
 
@@ -42,12 +42,13 @@ def main():
 
   # rename computers
   for computer in COMPUTERS:
-    print(f"Renaming computer {computer['serial_number']} - {computer['name']} to r-{computer['UNAME']}")
-    access_token, token_expiration_epoch = rename_computer(
-      computer["id"], f"r-{computer['UNAME']}", access_token, token_expiration_epoch)
+    if computer["STATUS"] == "BAD":
+      print(f"Renaming computer {computer['serial_number']} - {computer['name']} to r-{computer['UNAME']}")
+      access_token, token_expiration_epoch = rename_computer(
+        computer["id"], f"r-{computer['UNAME']}", access_token, token_expiration_epoch)
   invalidate_token(access_token)
 
-  print("Done rename.py")
+  print("Done rename.py\n")
 
 # ==================================================================================
 
