@@ -3,10 +3,19 @@ import requests
 import urllib3
 import csv
 import time
+import os
+import sys
 
 with open("data/all_computers.csv", "r") as f:
   reader = csv.DictReader(f)
   COMPUTERS = [row for row in reader]
+
+# append logs to log file via LOG_FILE env var
+log_file = os.environ.get("LOG_FILE")
+if log_file:
+  log_output = open(log_file, "a")
+  sys.stdout = log_output
+  sys.stderr = log_output
 
 # ==================================================================================
 
