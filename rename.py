@@ -5,21 +5,22 @@ import csv
 import time
 import os
 import sys
+from datetime import datetime
 
 with open("data/all_computers.csv", "r") as f:
   reader = csv.DictReader(f)
   COMPUTERS = [row for row in reader]
 
-# append logs to log file via LOG_FILE env var
-log_file = os.environ.get("LOG_FILE")
-if log_file:
-  log_output = open(log_file, "a")
-  sys.stdout = log_output
-  sys.stderr = log_output
+# find most recent log file
+# log_files = [f for f in os.listdir("logs") if f.endswith(".log")]
+# if log_files:
+#   log_files.sort(key=lambda x: os.path.getmtime(os.path.join("logs", x)), reverse=True)
+#   LOG_FILE = os.path.join("logs", log_files[0])
+#   print(f"Log file: {LOG_FILE}")
 
 # ==================================================================================
 
-def rename_computer(computer_id, new_name, access_token, token_expiration_epoch):
+def rename_computer(computer, computer_id, new_name, access_token, token_expiration_epoch):
   # renew token if expiration < 15 secs
   current_epoch = int(time.time())
   if current_epoch > token_expiration_epoch - 15:
@@ -37,10 +38,20 @@ def rename_computer(computer_id, new_name, access_token, token_expiration_epoch)
 
   if response.status_code == 200:
     print(f"Successfully renamed computer {computer_id} to {new_name}")
+    # update computer entry
+    computer["name"] = new_name
+    computer["STATUS"] = "GOOD"
   else:
     print(f"{response.status_code} Failed to rename computer {computer_id}:\n{response.text}")
 
   return access_token, token_expiration_epoch
+
+# def log(message):
+#   print(message)
+#   with open(LOG_FILE, "a") as f:
+#     f.write(f"{message}\n")
+#   f.close()
+#   return
 
 # ==================================================================================
 
@@ -54,10 +65,17 @@ def main():
     if computer["STATUS"] == "BAD":
       print(f"Renaming computer {computer['serial_number']} - {computer['name']} to r-{computer['UNAME']}")
       access_token, token_expiration_epoch = rename_computer(
-        computer["id"], f"r-{computer['UNAME']}", access_token, token_expiration_epoch)
+        computer, computer["id"], f"r-{computer['UNAME']}", access_token, token_expiration_epoch)
   invalidate_token(access_token)
 
-  print("Done rename.py\n")
+  # write renamed computer entries back to csv
+  with open("data/all_computers.csv", "w", newline='') as f:
+    writer = csv.DictWriter(f, fieldnames=COMPUTERS[0].keys())
+    writer.writeheader()
+    writer.writerows(COMPUTERS)
+  f.close()
+
+  print("Done rename.py")
 
 # ==================================================================================
 
