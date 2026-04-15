@@ -13,13 +13,12 @@ gpg -do .env .env.gpg
 ```
 
 ## Usage
-before running, add all computers you want to rename to the `Jamf computer rename` policy in jamf
 
 1. run `run.sh`
 
-2. review all rows in `all_computers.csv` with `STATUS == CHECK`
+2. review all rows in `data/all_computers.csv` with `STATUS == CHECK`
 
-3. update `STATUS` to `BAD` to rename; add computer id to `exceptions.csv` to skip
+3. update `STATUS` to `BAD` to rename; add computer id to `data/exceptions.csv` to skip
 
 4. save .csv file(s)
 
@@ -31,7 +30,7 @@ correct name will get pushed to the device locally upon the next recurring check
 
 view most recent log in `logs/` for more details
 
-> **Note:** this takes ~20 minutes to complete - do not drop network connection while running
+> **Note:** this process takes ~20 - 30 minutes to complete - do not drop network connection while running
 
 ## Info
 
@@ -56,7 +55,7 @@ view most recent log in `logs/` for more details
 
 ## Quick Rename
 
-quick CLI method for renaming a single computer
+small script for renaming a single computer quickly
 
 ```sh
 ./quick_rename.sh <computer_id> <username>
