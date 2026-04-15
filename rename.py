@@ -3,9 +3,6 @@ import requests
 import urllib3
 import csv
 import time
-import os
-import sys
-from datetime import datetime
 
 with open("data/all_computers.csv", "r") as f:
   reader = csv.DictReader(f)

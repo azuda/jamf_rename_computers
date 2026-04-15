@@ -22,7 +22,7 @@ gpg -do .env .env.gpg
 
 4. save .csv file(s)
 
-5. run `rename.py` to apply changes
+5. run `rename.sh` to push renaming changes to jamf
 
 upon completion, all computers that are assigned to a user should now be correctly named `r-<username>` in jamf
 
@@ -34,9 +34,11 @@ view most recent log in `logs/` for more details
 
 ## Info
 
-- `run.sh` runs 3 scripts:
+- `run.sh` runs 2 scripts:
   - `query_jamf.py` gets all computers from jamf and saves to `response_computers_basic.json`
   - `parse.py` parses data `response_computers_basic.json` + adds userAndLocation info and saves to `all_computers.csv`
+
+- `rename.sh` runs `rename.py`:
   - `rename.py` changes computer names based on criteria below and then saves updated entries to `all_computers.csv`
 
 <details>
